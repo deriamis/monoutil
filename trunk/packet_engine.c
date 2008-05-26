@@ -36,7 +36,7 @@
 
 // global variables
 // ---------
-char *logfilename = "/var/log/monoutil.log";	// program's log file
+char *logfilename = "/var/log/monitorS.log";	// program's log file
 char *cfg_serv_filename = "services.conf";		// program's config file for services
 char *cfg_network_filename = "networks.conf";	// program's config file for networks
 
@@ -65,7 +65,7 @@ void count_networks(char *str, int in, int size);
 void print_options(void);
 void on_quit(void);
 void writelog(char *);
-//void read_log(char *);
+void read_log(char *);
 void read_config();
 void print_values();
 int get_port_of_serv(char *, char *);
@@ -156,23 +156,23 @@ int main(int argc, char **argv) {
 	
 	// continue to read log file if necessair
 	// --------------------------------------
-//	FILE *f = fopen(logfilename, "r");
-//	if (f != NULL) {
-//		printf("Logfile existed in %s! \n", logfilename);
-//		printf("Do you want to continue with this log file ? (y/n): \n"); 
-//		char c = ' ';
-//		while (c != 'y' && c != 'n') {
-//			c = tolower(fgetc(stdin));
-//		}
-//		
-//		if (c == 'y')
-//			read_log(logfilename);
-//		fclose(f);
-//	}
+	FILE *f = fopen(logfilename, "r");
+	if (f != NULL) {
+		printf("Logfile existed in %s! \n", logfilename);
+		printf("Do you want to continue with this log file ? (y/n): \n"); 
+		char c = ' ';
+		while (c != 'y' && c != 'n') {
+			c = tolower(fgetc(stdin));
+		}
+		
+		if (c == 'y')
+			read_log(logfilename);
+		fclose(f);
+	}
 	
 	// printf for test
 	// ---------------
-	print_values(stdin);
+	//print_values(stdin);
 	
 	// check if program run in background ?
 	// ------------------------------------
@@ -404,8 +404,8 @@ int find_ip(int *list_ip, int n_list, char *str) {
 	ptr1 = strchr(ptr1 + 1, '.');
 	int a = atoi(ptr1 + 1);
 	ptr1 = strrchr(str, '.');
-	int b = atoi(ptr1 + 1);
-	a = (a >> 8) + b;
+	int b = atoi(ptr1 + 1);	
+	a = (a << 8) + b;	
 	
 	int i=0;
 	for (i=0; i<n_list; i++) {
@@ -464,21 +464,7 @@ void writelog(char *filename) {
 	}
 	
 	print_values(fd);
-//	fprintf(fd, "ICMP %.0f %.0f TCP %.0f %.0f UDP %.0f %.0f ESP %.0f %.0f Other %.0f %.0f", 
-//			num_pkt_protocol[0].in, num_pkt_protocol[0].out,
-//			num_pkt_protocol[1].in, num_pkt_protocol[1].out,
-//			num_pkt_protocol[2].in, num_pkt_protocol[2].out,
-//			num_pkt_protocol[3].in, num_pkt_protocol[3].out,
-//			num_pkt_protocol[4].in, num_pkt_protocol[4].out
-//		);
-//	int i = 0;
-//	for (i = 0; i < num_services; i++) {
-//		fprintf(fd, " %s %.0f %.0f",
-//				services[i].name, 
-//				services[i].num_pkt_in, 
-//				services[i].num_pkt_out
-//			);
-//	}
+
 	fflush(stdout);
 	fclose(fd);
 }
@@ -486,50 +472,53 @@ void writelog(char *filename) {
 /*
  * this function reads data from the log file into globals variables 
  */
-//void read_log(char *filename) {
-//	FILE *fd = fopen(filename, "r");
-//	if (fd == NULL) {
-//		printf("Unable to open log file\n");
-//		exit(-1);
-//	}
-//	
-//	char temp[10];
-//	double test1 = 0, test2 = 0;
-//	int count = 0;
-//	while (! feof(fd)) {
-//		fscanf(fd, "%s", temp);
-//		fscanf(fd, "%lf", &test1);
-//		fscanf(fd, "%lf", &test2);
-//		//printf("%s %.0f %.0f\n", temp, test1, test2);
-//		if (count < 5) {
-//			num_pkt_protocol[count].in = test1;
-//			num_pkt_protocol[count].out = test2;
-//		} else {
-//			services[count-5].num_pkt_in = test1;
-//			services[count-5].num_pkt_out = test2;
-//		}
-//		count++;
-//	}
-//
-//	//printf("count: %d\n", count);
-//	
-//	// if config file is changed ?
-//	if (count - 5 != num_services) {
-//		printf("Warning: config file is changed before reading log file !\n");
-//		printf("Continue ? (y/n) : ");
-//		char c = ' ';
-//		while (c != 'y' && c != 'n') {
-//			c = tolower(fgetc(stdin));
-//		}
-//				
-//		if (c == 'n')
-//			exit(-1);
-//	}
-//	else
-//		printf("Reading log file...OK\n");
-//	
-//	fclose(fd);
-//}
+void read_log(char *filename) {
+	FILE *fd = fopen(filename, "r");
+	if (fd == NULL) {
+		printf("Unable to open log file\n");
+		exit(-1);
+	}
+	
+	char temp[10];
+	double test1 = 0, test2 = 0;
+	int i = 0;
+	while (! feof(fd)) {
+		fscanf(fd, "%s", temp);
+		fscanf(fd, "%lf", &test1);
+		fscanf(fd, "%lf", &test2);
+		
+		if (i < num_serv) {
+			//printf("out-if:%s %s\n", temp, services[i].name);
+			if (!strcmp(temp, services[i].name)) {
+				//printf("%s %.0f %.0f\n", temp, test1, test2);
+				services[i].v_pkt_in = test1;
+				services[i].v_pkt_out = test2;
+				i++;
+			}
+		} else {
+			if (!strcmp(temp, networks[i-num_serv].name)) {
+				//printf("%s %.0f %.0f\n", temp, test1, test2);
+				networks[i-num_serv].v_pkt_in = test1;
+				networks[i-num_serv].v_pkt_out = test2;
+				i++;
+			}
+		}		
+	}
+	if (i < num_serv + num_networks) {
+		printf("Warning: config file is changed before reading log file !\n");
+		printf("Continue ? (y/n) : ");
+		char c = ' ';
+		while (c != 'y' && c != 'n') {
+			c = tolower(fgetc(stdin));
+		}
+				
+		if (c == 'n')
+			exit(-1);
+	} else
+		printf("Reading log file...OK\n");
+	
+	fclose(fd);
+}
 
 void trim(char *s) {
 	char ret[80];
@@ -628,7 +617,7 @@ void read_config() {
 			while (token != NULL) {
 				trim(token);
 				networks[num_networks-1].n_list++;
-				printf("%s n_list: %d\n", token, networks[num_networks-1].n_list);
+				//printf("%s n_list: %d\n", token, networks[num_networks-1].n_list);
 				networks[num_networks-1].list_ip = (unsigned int *) realloc(networks[num_networks-1].list_ip, 
 						sizeof(unsigned int) * networks[num_networks-1].n_list * 2);
 				get_limit_ip(token, networks[num_networks-1].list_ip, networks[num_networks-1].n_list);
@@ -650,24 +639,24 @@ void read_config() {
 }
 
 void print_values(FILE *fd) {
-	fprintf(fd, "Statistic: \n");
+	//fprintf(fd, "Statistic: \n");
 	int i = 0;
-	printf("\tServices\n");
+	//printf("\tServices\n");
 	for (i=0; i<num_serv; i++) {
-		fprintf(fd, "\t  Name: %s, in %.0lf / out %.0lf\n", 
+		fprintf(fd, "%s %.0lf %.0lf\n", 
 				services[i].name, services[i].v_pkt_in, services[i].v_pkt_out);
 	}
-	printf("\tNetworks\n");
+	//printf("\tNetworks\n");
 	for (i=0; i<num_networks; i++) {
-		fprintf(fd, "\t  Name: %s, in %.0lf / out %.0lf\n", 
+		fprintf(fd, "%s %.0lf %.0lf\n", 
 				networks[i].name, networks[i].v_pkt_in, networks[i].v_pkt_out);
 	}
 }
 
 /*
  * To get port number of service
- * 	Input: name of service, protocol
- * 	Output: port number (=0 if not found)
+ * Input: name of service, protocol
+ * Output: port number (=0 if not found)
  */
 int get_port_of_serv(char *name, char *proto) {
 	struct servent *sp= NULL;
