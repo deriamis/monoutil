@@ -1,0 +1,51 @@
+############
+Requirement
+############
+
+1. sudo apt-get install build-essential
+2. sudo apt-get install libnetfilter-queue-dev
+3. Apache2 server
+4. Perl support
+5. sudo apt-get install rrdtool
+6. sudo apt-get install librrds-perl
+7. lockfile (sudo apt-get install procmail)
+
+############
+Installation
+############
+$make
+$sudo make install
+$sudo ./scripts/install.sh
+...
+
+#####################
+Configuration Apache2
+##################### 
+
+- Add the line following in the httpd.conf file:
+
+AddHandler cgi-script .cgi .pl
+
+- Modify the apache2.conf file
+
+# for cgi
+Alias /monitorS /var/www/monitorS
+
+<Directory "/var/www/monitorS">
+        Options Indexes Includes FollowSymLinks ExecCGI
+        Order Deny,Allow
+        Deny from All
+        Allow from all
+        AllowOverride None
+</Directory>
+
+
+
+NOTE : Error with the kernel 2.6.23 (for example : Ubuntu 8.04), just remove the exit(-1)
+line (some dicussion about this bug on Ubuntuforums.org :
+http://ubuntuforums.org/showthread.php?t=192559&page=74)
+
+##############
+Uninstallation
+##############
+$sudo ./scripts/uninstall.sh
