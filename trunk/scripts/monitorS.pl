@@ -13,24 +13,40 @@ our $MONITORS_VER="1.0";					# version
 our $IDATE="01 Mars 2008";					# initial date
 our	$FILE_RRD="/var/lib/monitorS.rrd";		# directory of files RRD
 our $FILE_LOG="/var/log/monitorS.log";		# log file of program
-our $FILE_CONFIG="/etc/packet_engine.conf"; # config file
-my @services;
-my $num_services=0;
+our $FILE_CONFIG_SERVICES="services.conf"; 	# config file
+our $FILE_CONFIG_NETWORKS="networks.conf";
 my $TIME_SLEEP = 300;						# 5 minutes
 
-# read config
-open (CONFIG,"$FILE_CONFIG") || die "  Error opening log file $FILE_CONFIG.\n";
-while(<CONFIG>) {
-	if (! /#/ && /,/) {
-		my $port = 0;
-		my $sname = "";
-		($port, $sname) = split(',');
-		chomp($sname, $port);
-		$services[$num_services] = $sname;
-		$num_services++;
-	} 
-}
+my @services;
+my @networks;
+my $num_services=0;
+my $num_networks=0;
 
+
+# read config file
+# services.conf
+my $line="";
+open (CONFIG,"$FILE_CONFIG_SERVICES") || die "  Error opening log file $FILE_CONFIG_SERVICES.\n";
+foreach $line (<CONFIG>) {
+	if (index($line, "!") == 0) {		
+		my @temp = split(' ', $line);
+		chomp(@temp);
+		$services[$num_services] = $temp[1];
+		$num_services++;
+	}
+}
+close (CONFIG);
+
+# networks.conf
+open (CONFIG,"$FILE_CONFIG_NETWORKS") || die "  Error opening log file $FILE_CONFIG_NETWORKS.\n";
+foreach $line (<CONFIG>) {
+	if (index($line, "!") == 0) {		
+		my @temp = split(' ', $line);
+		chomp(@temp);
+		$networks[$num_networks] = $temp[1];
+		$num_networks++;
+	}
+}
 close (CONFIG);
 
 # main process
@@ -163,26 +179,25 @@ sub create {
 # RRA: last data of 300*288*365 secs = 1 year
 	my @ds_services_in;
 	my @ds_services_out;
+	my @ds_networks_in;
+	my @ds_networks_out;
+	
 	my $n = 0;
 	for($n=0; $n<$num_services; $n++) {
 		$ds_services_in[$n] = "DS:$services[$n]_IN:COUNTER:600:0:U";
 		$ds_services_out[$n] = "DS:$services[$n]_OUT:COUNTER:600:0:U";
 	}
+	for($n=0; $n<$num_networks; $n++) {
+		$ds_networks_in[$n] = "DS:$networks[$n]_IN:COUNTER:600:0:U";
+		$ds_networks_out[$n] = "DS:$networks[$n]_OUT:COUNTER:600:0:U";
+	}
 	if(!(-e $FILE_RRD)) {
 		RRDs::create($FILE_RRD,
 			"--start=now", 
-			"DS:ICMP_IN:COUNTER:600:0:U",
-			"DS:ICMP_OUT:COUNTER:600:0:U",
-			"DS:TCP_IN:COUNTER:600:0:U",
-			"DS:TCP_OUT:COUNTER:600:0:U",
-			"DS:UDP_IN:COUNTER:600:0:U",
-			"DS:UDP_OUT:COUNTER:600:0:U",
-			"DS:ESP_IN:COUNTER:600:0:U",
-			"DS:ESP_OUT:COUNTER:600:0:U",
-			"DS:OTHER_IN:COUNTER:600:0:U",
-			"DS:OTHER_OUT:COUNTER:600:0:U",
 			@ds_services_in,
 			@ds_services_out,
+			@ds_networks_in,
+			@ds_networks_out,
 			"RRA:AVERAGE:0.5:1:288",
 			"RRA:AVERAGE:0.5:6:336",
 			"RRA:AVERAGE:0.5:12:744",
@@ -207,62 +222,87 @@ sub create {
 sub update {
 	sleep($TIME_SLEEP);
 
-	my $s_icmp = "";
-	my $icmp_in = 0;
-	my $icmp_out = 0;
-	my $s_tcp = "";
-	my $tcp_in = 0;
-	my $tcp_out = 0;
-	my $s_udp = "";
-	my $udp_in = 0;
-	my $udp_out = 0;
-	my $s_esp = "";
-	my $esp_in = 0;
-	my $esp_out = 0;
-	my $s_other = "";
-	my $other_in = 0;
-	my $other_out = 0;
 	my $rrdata = "N";
 	my @services_data;
+	my @networks_data;
 
 	my $n = 0;
-	for($n=0; $n<3*$num_services; $n++) {
+	for($n=0; $n<2*$num_services; $n++) {
 		$services_data[$n] = " ";
+	}
+	for($n=0; $n<2*$num_networks; $n++) {
+		$networks_data[$n] = " ";
 	}
 
 	my $line = "";
+	$n = 0;
 	open(FILE_LOG) or die("ERROR: Could not open log file.");
 	foreach $line (<FILE_LOG>) {
-		($s_icmp, $icmp_in, $icmp_out, $s_tcp, $tcp_in, $tcp_out, $s_udp, $udp_in, $udp_out, $s_esp, $esp_in, $esp_out, $s_other, $other_in, $other_out, @services_data) = split(' ', $line);
+		my @temp = split(' ', $line);
+		chomp(@temp);		
+		if ($n<$num_services) {
+			if (@temp) {
+				$services_data[$n*2] = $temp[1];
+				$services_data[$n*2+1] = $temp[2];
+				$n++;
+			}
+		} else {
+			if (@temp) {
+				$networks_data[$n*2] = $temp[1];
+				$networks_data[$n*2+1] = $temp[2];
+				$n++;
+			}
+		}  
 	}
 	close(FILE_LOG);
-	chomp($s_icmp, $icmp_in, $icmp_out, $s_tcp, $tcp_in, $tcp_out, $s_udp, $udp_in, $udp_out, $s_esp, $esp_in, $esp_out, $s_other, $other_in, $other_out, @services_data);
 
 	# add1 for error read log file
-	if (!length($s_icmp) eq "icmp") {
+	if ($n == 0) {
 		print "re-read\n";
 		sleep(1);
 		$TIME_SLEEP = 299;
 		open(FILE_LOG) or die("ERROR: Could not open log file.");
 		foreach $line (<FILE_LOG>) {
-			($s_icmp, $icmp_in, $icmp_out, $s_tcp, $tcp_in, $tcp_out, $s_udp, $udp_in, $udp_out, $s_esp, $esp_in, $esp_out, $s_other, $other_in, $other_out, @services_data) = split(' ', $line);
+			my @temp = split(' ', $line);
+			chomp(@temp);		
+			if ($n<$num_services) {
+				if (@temp) {
+					$services_data[$n*2] = $temp[1];
+					$services_data[$n*2+1] = $temp[2];
+					$n++;
+				}
+			} else {
+				if (@temp) {
+					$networks_data[$n*2] = $temp[1];
+					$networks_data[$n*2+1] = $temp[2];
+					$n++;
+				}
+			}  
 		}
 		close(FILE_LOG);
-		chomp($s_icmp, $icmp_in, $icmp_out, $s_tcp, $tcp_in, $tcp_out, $s_udp, $udp_in, $udp_out, $s_esp, $esp_in, $esp_out, $s_other, $other_in, $other_out, @services_data);
 	} else { $TIME_SLEEP = 300; }
 	# end add1
-
-	$rrdata .= ":$icmp_in:$icmp_out:$tcp_in:$tcp_out:$udp_in:$udp_out:$esp_in:$esp_out:$other_in:$other_out";
 	
-	my $temp = 0;
 	for ($n=0; $n<$num_services; $n++) {
-		$temp = $services_data[3*$n+1];
+		my $temp = $services_data[$n*2];
 		$rrdata .= ":$temp";
 	}
+	
 	for ($n=0; $n<$num_services; $n++) {
-		$temp = $services_data[3*$n+2];
+		my $temp = $services_data[$n*2+1];
 		$rrdata .= ":$temp";
 	}
+	
+	for ($n=0; $n<$num_networks; $n++) {
+		my $temp = $networks_data[$n*2];
+		$rrdata .= ":$temp";
+	}
+	
+	for ($n=0; $n<$num_networks; $n++) {
+		my $temp = $networks_data[$n*2+1];
+		$rrdata .= ":$temp";	
+	}
+	
 #	print $rrdata ."\n";
 	RRDs::update($FILE_RRD, $rrdata);
 	my $err = RRDs::error;
@@ -306,26 +346,32 @@ sub graph {
 
 	my $GRAPH = "/var/www/monitorS/imgs/demo.png";
 	my @DEF;
-	$DEF[0] = "DEF:icmp_in=$FILE_RRD:ICMP_IN:AVERAGE";
-	$DEF[1] = "DEF:tcp_in=$FILE_RRD:TCP_IN:AVERAGE";
-	$DEF[2] = "DEF:udp_in=$FILE_RRD:UDP_IN:AVERAGE";
-	$DEF[3] = "DEF:esp_in=$FILE_RRD:ESP_IN:AVERAGE";
-	$DEF[4] = "DEF:other_in=$FILE_RRD:OTHER_IN:AVERAGE";
-	$DEF[5] = "DEF:icmp_out=$FILE_RRD:ICMP_OUT:AVERAGE";
-	$DEF[6] = "DEF:tcp_out=$FILE_RRD:TCP_OUT:AVERAGE";
-	$DEF[7] = "DEF:udp_out=$FILE_RRD:UDP_OUT:AVERAGE";
-	$DEF[8] = "DEF:esp_out=$FILE_RRD:ESP_OUT:AVERAGE";
-	$DEF[9] = "DEF:other_out=$FILE_RRD:OTHER_OUT:AVERAGE";
+	my $i;
+	for ($i=0; $i<$num_services; $i++) {
+		$DEF[$i*2] = "DEF:".$services[$i]."_in=$FILE_RRD:".$services[$i]."_IN:AVERAGE";
+		$DEF[$i*2+1] = "DEF:".$services[$i]."_out=$FILE_RRD:".$services[$i]."_OUT:AVERAGE";
+	}
+	my @CDEF;
+	for ($i=0; $i<$num_services; $i++) {
+		$CDEF[$i] = "CDEF:c_".$services[$i]."=".$services[$i]."_in,".$services[$i]."_out,+,300,*";
+	}
+	my @COLORDRAW;
+	$COLORDRAW[0] = "44EE44";
+	$COLORDRAW[1] = "4444EE";
+	$COLORDRAW[2] = "EE4444";
+	$COLORDRAW[3] = "444444";
+	$COLORDRAW[4] = "EE44EE";
+	
+	my @AREA;
+	for ($i=0; $i<$num_services; $i++) {
+		$AREA[$i] = "AREA:c_".$services[$i]."#".$COLORDRAW[$i].":".$services[$i];
+	}	
 	RRDs::graph("$GRAPH",
-		"--title=IP Protocols (in + out)",
+		"--title=Networks (in + out)",
 		"-s -2h5min",
 		"-e -5min",
-#		"--start=1199493660",
-#		"--end=1199497260",
-#		"--start=-1month",
-#		"--step=60",
 		"--imgformat=PNG",
-		"--vertical-label=packets/300secs",
+		"--vertical-label=bytes/300secs",
 		"--width=450",
 		"--height=150",
 		"--upper-limit=10000",
@@ -334,16 +380,8 @@ sub graph {
 		@VERSION12,
 		@graph_colors,
 		@DEF,
-		"CDEF:k_icmp=icmp_in,icmp_out,+,300,*",
-		"CDEF:k_tcp=tcp_in,tcp_out,+,300,*",
-		"CDEF:k_udp=udp_in,udp_out,+,300,*",
-		"CDEF:k_esp=esp_in,esp_out,+,300,*",
-		"CDEF:k_other=other_in,other_out,+,300,*",
-		"AREA:k_icmp#44EE44:ICMP",
-		"AREA:k_tcp#4444EE:TCP",
-		"AREA:k_udp#EE4444:UDP",
-		"AREA:k_esp#444444:ESP",
-		"AREA:k_other#EE44EE:Other",
+		@CDEF,
+		@AREA,
 #		"LINE1:tcp#00EE00",
 #		"LINE1:B_out#0000EE",
 #		"COMMENT:\\n",
