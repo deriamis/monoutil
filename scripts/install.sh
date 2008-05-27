@@ -29,13 +29,13 @@ echo
 case $OS in
 	Linux)
 		echo "This install script has detected that this is a $OS operating system."
-		SBIN="/usr/bin"
-		ETC="/etc"
+		SBIN="/usr/local/sbin"
+		ETC="/usr/local/etc"
 		INIT="/etc/init.d"
-		LIB="/usr/lib"
+		LIB="/usr/local/lib"
 		DOC="/usr/share/doc"
 		HTDOCS="/var/www"
-		CGIBIN="/usr/lib/cgi-bin"
+		CGIBIN="/usr/local/lib/cgi-bin"
 		PORTS="${OS}-Debian"
 		show_paths
 		;;
@@ -74,9 +74,10 @@ while [ $OK -eq 0 ] ; do
 done
 
 echo "Copying config file to $ETC directory"
-echo "packet_engine.conf"
-cp packet_engine.conf $ETC
-chmod 755 $ETC/packet_engine.conf
+echo "services.conf & networks.conf"
+cp *.conf $ETC
+chmod 755 $ETC/services.conf
+chmod 755 $ETC/networks.conf
 echo
 
 echo "Copying updater script to $SBIN directory"
@@ -112,7 +113,7 @@ echo
 echo "and finally go to http://localhost/monitorS/ to start to see results."
 echo
 echo "NOTE: As a crond-based application, the root user will receive emails"
-echo "about Monitorix execution errors. Please check the root email.".
+echo "about MonitorS execution errors. Please check the root email.".
 echo
 exit 0
 

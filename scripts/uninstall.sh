@@ -29,13 +29,13 @@ echo
 case $OS in
 	Linux)
 		echo "This un-install script has detected that this is a $OS operating system."
-		SBIN="/usr/bin"
-		ETC="/etc"
+		SBIN="/usr/local/sbin"
+		ETC="/usr/local/etc"
 		INIT="/etc/init.d"
-		LIB="/usr/lib"
+		LIB="/usr/local/lib"
 		DOC="/usr/share/doc"
 		HTDOCS="/var/www"
-		CGIBIN="/usr/lib/cgi-bin"
+		CGIBIN="/usr/local/lib/cgi-bin"
 		PORTS="${OS}-Debian"
 		show_paths
 		;;
@@ -74,8 +74,9 @@ while [ $OK -eq 0 ] ; do
 done
 
 echo "Removing config file in $ETC directory"
-echo "packet_engine.conf"
-rm $ETC/packet_engine.conf
+echo "services.conf & networks.conf"
+rm $ETC/networks.conf
+rm $ETC/services.conf
 echo
 
 echo "Removing updater script in $SBIN directory"
