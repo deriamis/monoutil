@@ -191,6 +191,7 @@ sub create {
 		$ds_networks_in[$n] = "DS:$networks[$n]_IN:COUNTER:600:0:U";
 		$ds_networks_out[$n] = "DS:$networks[$n]_OUT:COUNTER:600:0:U";
 	}
+	
 	if(!(-e $FILE_RRD)) {
 		RRDs::create($FILE_RRD,
 			"--start=now", 
@@ -228,10 +229,10 @@ sub update {
 
 	my $n = 0;
 	for($n=0; $n<2*$num_services; $n++) {
-		$services_data[$n] = " ";
+		$services_data[$n] = 0;
 	}
 	for($n=0; $n<2*$num_networks; $n++) {
-		$networks_data[$n] = " ";
+		$networks_data[$n] = 0;
 	}
 
 	my $line = "";
@@ -248,8 +249,8 @@ sub update {
 			}
 		} else {
 			if (@temp) {
-				$networks_data[$n*2] = $temp[1];
-				$networks_data[$n*2+1] = $temp[2];
+				$networks_data[($n-$num_services)*2] = $temp[1];
+				$networks_data[($n-$num_services)*2+1] = $temp[2];
 				$n++;
 			}
 		}  
@@ -283,27 +284,28 @@ sub update {
 	} else { $TIME_SLEEP = 300; }
 	# end add1
 	
+	# in services
 	for ($n=0; $n<$num_services; $n++) {
 		my $temp = $services_data[$n*2];
 		$rrdata .= ":$temp";
 	}
-	
+	# out services
 	for ($n=0; $n<$num_services; $n++) {
 		my $temp = $services_data[$n*2+1];
 		$rrdata .= ":$temp";
 	}
-	
+	# in networks
 	for ($n=0; $n<$num_networks; $n++) {
 		my $temp = $networks_data[$n*2];
 		$rrdata .= ":$temp";
 	}
-	
+	# out networks
 	for ($n=0; $n<$num_networks; $n++) {
 		my $temp = $networks_data[$n*2+1];
 		$rrdata .= ":$temp";	
 	}
 	
-#	print $rrdata ."\n";
+	print $rrdata ."\n";
 	RRDs::update($FILE_RRD, $rrdata);
 	my $err = RRDs::error;
 	die("ERROR: while updating $FILE_RRD: $err\n") if $err;
@@ -353,28 +355,33 @@ sub graph {
 	}
 	my @CDEF;
 	for ($i=0; $i<$num_services; $i++) {
-		$CDEF[$i] = "CDEF:c_".$services[$i]."=".$services[$i]."_in,".$services[$i]."_out,+,300,*";
+		$CDEF[$i] = "CDEF:c_".$services[$i]."=".$services[$i]."_in,".$services[$i]."_out,+";
 	}
 	my @COLORDRAW;
-	$COLORDRAW[0] = "44EE44";
-	$COLORDRAW[1] = "4444EE";
-	$COLORDRAW[2] = "EE4444";
-	$COLORDRAW[3] = "444444";
-	$COLORDRAW[4] = "EE44EE";
+	$COLORDRAW[0] = "#44EE44";
+	$COLORDRAW[1] = "#4444EE";
+	$COLORDRAW[2] = "#EE4444";
+	$COLORDRAW[3] = "#444444";
+	$COLORDRAW[4] = "#EE44EE";
 	
 	my @AREA;
 	for ($i=0; $i<$num_services; $i++) {
-		$AREA[$i] = "AREA:c_".$services[$i]."#".$COLORDRAW[$i].":".$services[$i];
+		$AREA[$i] = "AREA:c_".$services[$i].$COLORDRAW[$i].":".$services[$i];
 	}	
+#	print @DEF;
+#	print @CDEF;
+#	print @AREA;
+#	print "\n";
+	
 	RRDs::graph("$GRAPH",
 		"--title=Networks (in + out)",
 		"-s -2h5min",
 		"-e -5min",
 		"--imgformat=PNG",
-		"--vertical-label=bytes/300secs",
+		"--vertical-label=bytes/secs",
 		"--width=450",
 		"--height=150",
-		"--upper-limit=10000",
+		"--upper-limit=500000",
 		"--lower-limit=0",
 		"--rigid",
 		@VERSION12,
