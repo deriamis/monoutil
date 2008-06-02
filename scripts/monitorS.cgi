@@ -13,29 +13,44 @@ my @graphs = (
 	{ title => 'Last Year',  seconds => 3600*24*365, },
 );
 my $scriptname = 'monitorS.cgi';				# name of script CGI
-my $rrd = "/var/lib/monitorS.rrd"; 				# path to where the RRD database is
-my $config_file = "/etc/packet_engine.conf";	# path to config file
-my $base_dir = "/var/www/monitorS";			# directory of website
+my $FILE_RRD = "/var/lib/monitorS.rrd"; 				# path to where the RRD database is
+our $FILE_CONFIG_SERVICES="/etc/services.conf"; 			# config file
+our $FILE_CONFIG_NETWORKS="/etc/networks.conf";			# config file
+my $base_dir = "/var/www/monitorS";				# directory of website
 
 my @services;
+my @networks;
 my $num_services=0;
+my $num_networks=0;
 
-# read config
-open (CONFIG,"$config_file") || die "  Error opening log file $config_file.\n";
-while(<CONFIG>) {
-	if (! /#/ && /,/) {
-		my $port = 0;
-		my $sname = "";
-		($port, $sname) = split(',');
-		chomp($sname, $port);
-		$services[$num_services] = $sname;
+
+# read config file
+# services.conf
+my $line="";
+open (CONFIG,"$FILE_CONFIG_SERVICES") || die "  Error opening log file $FILE_CONFIG_SERVICES.\n";
+foreach $line (<CONFIG>) {
+	if (index($line, "!") == 0) {		
+		my @temp = split(' ', $line);
+		chomp(@temp);
+		$services[$num_services] = $temp[1];
 		$num_services++;
-	} 
+	}
 }
-
 close (CONFIG);
 
-sub graph ($$) {	
+# networks.conf
+open (CONFIG,"$FILE_CONFIG_NETWORKS") || die "  Error opening log file $FILE_CONFIG_NETWORKS.\n";
+foreach $line (<CONFIG>) {
+	if (index($line, "!") == 0) {		
+		my @temp = split(' ', $line);
+		chomp(@temp);
+		$networks[$num_networks] = $temp[1];
+		$num_networks++;
+	}
+}
+close (CONFIG);
+
+sub graph_services ($$) {	
 	my %BLACK = ("canvas" => "#000000",
 		"back" => "#101010",
 		"font" => "#C0C0C0",
@@ -69,46 +84,49 @@ sub graph ($$) {
 	my ($time, $GRAPH) = @_;
 	$time = $time - 300;
 	my @DEF;
-	$DEF[0] = "DEF:icmp_in=$rrd:ICMP_IN:AVERAGE";
-	$DEF[1] = "DEF:tcp_in=$rrd:TCP_IN:AVERAGE";
-	$DEF[2] = "DEF:udp_in=$rrd:UDP_IN:AVERAGE";
-	$DEF[3] = "DEF:esp_in=$rrd:ESP_IN:AVERAGE";
-	$DEF[4] = "DEF:other_in=$rrd:OTHER_IN:AVERAGE";
-	$DEF[5] = "DEF:icmp_out=$rrd:ICMP_OUT:AVERAGE";
-	$DEF[6] = "DEF:tcp_out=$rrd:TCP_OUT:AVERAGE";
-	$DEF[7] = "DEF:udp_out=$rrd:UDP_OUT:AVERAGE";
-	$DEF[8] = "DEF:esp_out=$rrd:ESP_OUT:AVERAGE";
-	$DEF[9] = "DEF:other_out=$rrd:OTHER_OUT:AVERAGE";
+	my $i;
+	for ($i=0; $i<$num_services; $i++) {
+		$DEF[$i*2] = "DEF:$services[$i]_in=$FILE_RRD:$services[$i]_IN:AVERAGE";
+		$DEF[$i*2+1] = "DEF:$services[$i]_out=$FILE_RRD:$services[$i]_OUT:AVERAGE";
+	}
+	my @CDEF;
+	for ($i=0; $i<$num_services; $i++) {
+		$CDEF[$i] = "CDEF:c_$services[$i]=$services[$i]_in,$services[$i]_out,+";
+	}
+	my @COLORDRAW;
+	$COLORDRAW[0] = "44EE44";
+	$COLORDRAW[1] = "4444EE";
+	$COLORDRAW[2] = "EE4444";
+	$COLORDRAW[3] = "444444";
+	$COLORDRAW[4] = "EE44EE";
+	
+	my @AREA;
+	for ($i=0; $i<$num_services; $i++) {
+		$AREA[$i] = "AREA:c_$services[$i]#$COLORDRAW[$i]:$services[$i]";
+	}
+	
 	RRDs::graph("$GRAPH",
-		"--title=IP Protocols (in + out)",
+		"--title=Services (in + out)",
 		"-s -".$time,
 		"-e -5min",
 		"--imgformat=PNG",
-		"--vertical-label=packets/300secs",
+		"--vertical-label=bytes/secs",
 		"--width=450",
 		"--height=150",
-		"--upper-limit=100000",
+		"--upper-limit=200000",
 		"--lower-limit=0",
 		"--rigid",
 		@VERSION12,
 		@graph_colors,
 		@DEF,
-		"CDEF:k_icmp=icmp_in,icmp_out,+,300,*",
-		"CDEF:k_tcp=tcp_in,tcp_out,+,300,*",
-		"CDEF:k_udp=udp_in,udp_out,+,300,*",
-		"CDEF:k_esp=esp_in,esp_out,+,300,*",
-		"CDEF:k_other=other_in,other_out,+,300,*",
-		"AREA:k_icmp#44EE44:ICMP",
-		"AREA:k_tcp#4444EE:TCP",
-		"AREA:k_udp#EE4444:UDP",
-		"AREA:k_esp#444444:ESP",
-		"AREA:k_other#EE44EE:Other",
+		@CDEF,
+		@AREA,
 		"COMMENT:\\n");
 	my $err = RRDs::error;
 	die("ERROR: while creating $GRAPH: $err\n") if $err;
 }
 
-sub graph_services ($$$) {	
+sub graph_networks ($$) {	
 	my %BLACK = ("canvas" => "#000000",
 		"back" => "#101010",
 		"font" => "#C0C0C0",
@@ -139,30 +157,46 @@ sub graph_services ($$$) {
 	$graph_colors[7] = "--color=SHADEA" . $BLACK{shadea};
 	$graph_colors[8] = "--color=SHADEB" . $BLACK{shadeb};
 
-	my ($service_name, $GRAPH, $in_out) = @_;
-#	$time = $time - 300;
-	my $time = 6900; # test voi 2 tieng
+	my ($time, $GRAPH) = @_;
+	$time = $time - 300;
 	my @DEF;
-	$DEF[0] = "DEF:d_in$service_name=$rrd:$service_name"."_IN:AVERAGE";
-	$DEF[1] = "DEF:d_out$service_name=$rrd:$service_name"."_OUT:AVERAGE";
+	my $i;
+	for ($i=0; $i<$num_networks; $i++) {
+		$DEF[$i*2] = "DEF:$networks[$i]_in=$FILE_RRD:$networks[$i]_IN:AVERAGE";
+		$DEF[$i*2+1] = "DEF:$networks[$i]_out=$FILE_RRD:$networks[$i]_OUT:AVERAGE";
+	}
+	my @CDEF;
+	for ($i=0; $i<$num_networks; $i++) {
+		$CDEF[$i] = "CDEF:c_$networks[$i]=$networks[$i]_in,$networks[$i]_out,+";
+	}
+	my @COLORDRAW;
+	$COLORDRAW[0] = "44EE44";
+	$COLORDRAW[1] = "4444EE";
+	$COLORDRAW[2] = "EE4444";
+	$COLORDRAW[3] = "444444";
+	$COLORDRAW[4] = "EE44EE";
+	
+	my @AREA;
+	for ($i=0; $i<$num_networks; $i++) {
+		$AREA[$i] = "AREA:c_$networks[$i]#$COLORDRAW[$i]:$networks[$i]";
+	}
+	
 	RRDs::graph("$GRAPH",
-		"--title=Service $service_name $in_out",
+		"--title=Networks (in + out)",
 		"-s -".$time,
 		"-e -5min",
 		"--imgformat=PNG",
-		"--vertical-label=packets/300secs",
+		"--vertical-label=bytes/secs",
 		"--width=450",
 		"--height=150",
-		"--upper-limit=100000",
+		"--upper-limit=200000",
 		"--lower-limit=0",
 		"--rigid",
 		@VERSION12,
 		@graph_colors,
 		@DEF,
-		"CDEF:cd_in$service_name=d_in$service_name,300,*",
-		"CDEF:cd_out$service_name=d_out$service_name,300,*",
-		"AREA:cd_in$service_name#4444EE:$service_name"." in",
-		"LINE1:cd_out$service_name#EE4444:$service_name"." out",
+		@CDEF,
+		@AREA,
 		"COMMENT:\\n");
 	my $err = RRDs::error;
 	die("ERROR: while creating $GRAPH: $err\n") if $err;
@@ -179,41 +213,47 @@ sub print_html()
 <title>TPE NGO Quang Minh - $host</title>
 <meta http-equiv="Refresh" content="300" />
 <meta http-equiv="Pragma" content="no-cache" />
-<link rel="stylesheet" href="monitorS.css" type="text/css" />
 </head>
 <body>
 HEADER
 
-	print "<h1>IP protocols monitoring for $host</h1>\n";
-	print "<ul id=\"protocols\">\n";
-	for my $n (0..$#graphs) {
-		print "  <li><a href=\"#G$n\">$graphs[$n]{title}</a>&nbsp;</li>\n";
-	}
-	print "</ul>\n";
-
-	for my $n (0..$#graphs) {
-		print "<h2 id=\"G$n\">$graphs[$n]{title}</h2>\n";
-		print "<MAP NAME=map$n>";
-		print "<AREA HREF=\"test\" ALT=\"test_alt\" SHAPE=RECT COORDS=\"5,5,95,195\">";
-#		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"105,5,195,195\">";
-#		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"205,5,295,195\">";
-		print "</MAP>";
-		print "<p><img src=\"$scriptname?${n}-p\" alt=\"monitorS\" usemap=\"#map$n\" width=\"450\" height=\"150\"/><br/>\n";
-	}
-
-	print "<hr />";
-	print "<h1>TCP/UDP services monitoring for $host</h1>\n";
+	print "<h1>Statistics for $host</h1>\n";
 	print "<ul id=\"services\">\n";
-	for my $n (0..$#services) {
-		print "  <li><a href=\"#S$n\">$services[$n]</a>&nbsp;</li>\n";
+	for my $n (0..$#graphs) {
+		print "  <li><a href=\"#S$n\">$graphs[$n]{title}</a>&nbsp;</li>\n";
 	}
 	print "</ul>\n";
 
-	for my $n (0..$#services) {
-		print "<h2 id=\"S$n\">$services[$n]</h2>\n";
-		print "<p><img src=\"$scriptname?${n}-s\" alt=\"$services[$n]\"/><br/>\n";
+	for my $n (0..$#graphs) {
+		print "<h2 id=\"S$n\">$graphs[$n]{title}</h2>\n";
+		# for services
+		print "<MAP NAME=map_s$n>";
+#		print "<AREA HREF=\"test\" ALT=\"test_alt\" SHAPE=RECT COORDS=\"5,5,95,195\">";
+#		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"105,5,195,195\">";
+		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"68,33,517,185\">";
+		print "</MAP>";
+		# for networks
+		print "<MAP NAME=map_n$n>";
+		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"68,33,517,185\">";
+		print "</MAP>";
+		print "<img border=0 src=\"$scriptname?${n}-s\" alt=\"monitorS\" usemap=\"#map_s$n\"/> ";
+		print "<img border=0 src=\"$scriptname?${n}-n\" alt=\"monitorS\" usemap=\"#map_n$n\"/><br/>";
+		print "\n";
 	}
 
+#	print "<hr />";
+#	print "<h1>TCP/UDP services monitoring for $host</h1>\n";
+#	print "<ul id=\"services\">\n";
+#	for my $n (0..$#services) {
+#		print "  <li><a href=\"#S$n\">$services[$n]</a>&nbsp;</li>\n";
+#	}
+#	print "</ul>\n";
+#
+#	for my $n (0..$#services) {
+#		print "<h2 id=\"S$n\">$services[$n]</h2>\n";
+#		print "<p><img src=\"$scriptname?${n}-s\" alt=\"$services[$n]\"/><br/>\n";
+#	}
+#
 	print <<FOOTER;
 <hr/>
 <table><tr>
@@ -250,20 +290,15 @@ sub send_image($)
 sub main()
 {
 	my $uri = $ENV{REQUEST_URI} || '';
-#	$uri =~ s/\/[^\/]+$//;
-#	$uri =~ s/\///g;
-#	$uri =~ s/(\~|\%7E)/tilde,/g;
-#	mkdir $tmp_dir, 0777 unless -d $tmp_dir;
-#	mkdir "$tmp_dir/$uri", 0777 unless -d "$tmp_dir/$uri";
 	my $img = $ENV{QUERY_STRING};
 	if(defined $img and $img =~ /\S/) {
-		if($img =~ /^(\d+)-p$/) {
-			my $file = "$base_dir\/imgs\/protocol_$1.png";
-			graph($graphs[$1]{seconds}, $file);
+		if($img =~ /^(\d+)-s$/) {
+			my $file = "$base_dir\/imgs\/services_$1.png";
+			graph_services($graphs[$1]{seconds}, $file);
 			send_image($file);
-		} elsif($img =~ /^(\d+)-s$/) {
-			my $file = "$base_dir\/imgs\/service_$services[$1].png";
-			graph_services($services[$1],$file, "in/out");
+		} elsif($img =~ /^(\d+)-n$/) {
+			my $file = "$base_dir\/imgs\/networks_$1.png";
+			graph_networks($graphs[$1]{seconds}, $file);
 			send_image($file);
 		}
 		else {
