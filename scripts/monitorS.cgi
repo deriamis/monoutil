@@ -14,8 +14,8 @@ my @graphs = (
 );
 my $scriptname = 'monitorS.cgi';				# name of script CGI
 my $FILE_RRD = "/var/lib/monitorS.rrd"; 				# path to where the RRD database is
-our $FILE_CONFIG_SERVICES="/etc/services.conf"; 			# config file
-our $FILE_CONFIG_NETWORKS="/etc/networks.conf";			# config file
+our $FILE_CONFIG_SERVICES="/usr/local/etc/services.conf"; 			# config file
+our $FILE_CONFIG_NETWORKS="/usr/local/etc/networks.conf";			# config file
 my $base_dir = "/var/www/monitorS";				# directory of website
 
 my @services;
