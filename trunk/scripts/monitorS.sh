@@ -6,6 +6,7 @@
 RETVAL=0
 LOCK="/var/lock/monitorS"
 PROGRAM="MonitorS"
+COMMAND="/usr/local/sbin/monitorS.pl"
 
 start() {
 	# Check if monitorS is already running
@@ -18,13 +19,13 @@ start() {
 		return $RETVAL
 	fi
 	# Creates RRDs files (if needed)
-	/usr/bin/monitorS.pl create
+	$COMMAND create
 	if [ $? -gt 0 ]; then
 		echo " ... Failed"
 		echo
 		return $RETVAL
 	fi
-	/usr/bin/monitorS.pl init
+	$COMMAND init
 	if [ $? -eq 0 ]; then
 		echo " ... Ok"
 		echo
@@ -38,7 +39,7 @@ start() {
 stop() {
 	if [ -e $LOCK ] ; then
 		rm -f $LOCK
-		/usr/bin/monitorS.pl stop
+		$COMMAND stop
 		echo -n $"Stopping $PROGRAM: "
 	else
 		echo
