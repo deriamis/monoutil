@@ -33,9 +33,9 @@ case $OS in
 		ETC="/usr/local/etc"
 		INIT="/etc/init.d"
 		LIB="/usr/local/lib"
-		DOC="/usr/share/doc"
+		DOC="/usr/local/share/doc"
 		HTDOCS="/var/www"
-		CGIBIN="/usr/local/lib/cgi-bin"
+		CGIBIN="/usr/lib/cgi-bin"
 		PORTS="${OS}-Debian"
 		show_paths
 		;;
@@ -98,7 +98,7 @@ echo "monitorS.cgi"
 rm $CGIBIN/monitorS.cgi
 echo
 
-echo "Removing RRD files in /var/lib directory"
+echo "Removing RRD files in $LIB directory"
 echo "monitorS.rrd"
 OK=0
 while [ $OK -eq 0 ] ; do
@@ -112,7 +112,7 @@ while [ $OK -eq 0 ] ; do
 
 		[yY])
 			echo
-			rm /var/lib/monitorS.rrd
+			rm $LIB/monitorS.rrd
 			echo
 			OK=1
 			;;

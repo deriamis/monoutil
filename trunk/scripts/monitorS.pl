@@ -11,7 +11,7 @@ use RRDs;
 # General
 our $MONITORS_VER="1.0";					# version
 our $IDATE="01 Mars 2008";					# initial date
-our	$FILE_RRD="/var/lib/monitorS.rrd";		# directory of files RRD
+our	$FILE_RRD="/usr/local/lib/monitorS.rrd";		# directory of files RRD
 our $FILE_LOG="/var/log/monitorS.log";		# log file of program
 our $FILE_CONFIG_SERVICES="services.conf"; 	# config file
 our $FILE_CONFIG_NETWORKS="networks.conf";
@@ -97,7 +97,6 @@ sub syntax {
 sub init {
 	my $n;
 	my $O_CRON = "/etc/cron.d/monitorS.sh";
-	my $O_INDEX = "/var/www/monitorS/index.html.tmp";
 	my $crontabuser = "root";
 
 	open(OCRON, "> $O_CRON");
@@ -107,48 +106,10 @@ sub init {
 #
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-* * * * * $crontabuser /usr/bin/monitorS.pl update >/dev/null 2>&1
+* * * * * $crontabuser /usr/local/sbin/monitorS.pl update >/dev/null 2>&1
 
 EOF
 	close(OCRON);
-
-	open(OHTML, "> $O_INDEX");
-	print OHTML <<EOF;
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
-<html>
-	<head>
-		<title>TPE - IFI</title>
- 	</head>
- 	<body bgcolor="#000000" text="#FFFFFF">
-  	<center><font face="Verdana, Tahoma, sans-serif">
-		<h1 align="center">MonitorS v$MONITORS_VER</h1>
-		<font color=888888>started on $IDATE<hr><br></font>
-    	<p><!MARK 1></p>
-		<p><!MARK 2></p>
-  	</font></center>
- 	</body>
-</html>
-EOF
-	close(OHTML);
-	my $I_INDEX="/var/www/monitorS/index.html.tmp";
-	$O_INDEX="/var/www/monitorS/index.html";
-
-	open(IHTML, "< $I_INDEX");
-	open(OHTML, "> $O_INDEX");
-	while(<IHTML>) {
-		if(/<!MARK 1/) {
-			print OHTML "<img src=\"./imgs/test.png\" />";
-			next;
-		}
-		if(/<!MARK 2/) {
-			print OHTML "<img src=\"./imgs/test.png\" />";
-			next;
-		}
-		print OHTML $_;
-	}
-	close(IHTML);
-	close(OHTML);
-	unlink($I_INDEX);
 }
 
 # =========================================================
