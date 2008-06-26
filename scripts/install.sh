@@ -33,9 +33,9 @@ case $OS in
 		ETC="/usr/local/etc"
 		INIT="/etc/init.d"
 		LIB="/usr/local/lib"
-		DOC="/usr/share/doc"
+		DOC="/usr/local/share/doc"
 		HTDOCS="/var/www"
-		CGIBIN="/usr/local/lib/cgi-bin"
+		CGIBIN="/usr/lib/cgi-bin"
 		PORTS="${OS}-Debian"
 		show_paths
 		;;
@@ -112,8 +112,6 @@ echo "$INIT/monitorS.sh [start|stop|status|restart]"
 echo
 echo "and finally go to http://localhost/monitorS/ to start to see results."
 echo
-echo "NOTE: As a crond-based application, the root user will receive emails"
-echo "about MonitorS execution errors. Please check the root email.".
-echo
+
 exit 0
 
