@@ -12,8 +12,8 @@ my @graphs = (
 	{ title => 'Last Month', seconds => 3600*24*31, },
 	{ title => 'Last Year',  seconds => 3600*24*365, },
 );
-my $scriptname = 'monitorS.cgi';				# name of script CGI
-my $FILE_RRD = "/var/lib/monitorS.rrd"; 				# path to where the RRD database is
+my $scriptname = "monitorS.cgi";				# name of script CGI
+my $FILE_RRD = "/usr/local/lib/monitorS.rrd"; 				# path to where the RRD database is
 our $FILE_CONFIG_SERVICES="/usr/local/etc/services.conf"; 			# config file
 our $FILE_CONFIG_NETWORKS="/usr/local/etc/networks.conf";			# config file
 my $base_dir = "/var/www/monitorS";				# directory of website
@@ -22,7 +22,6 @@ my @services;
 my @networks;
 my $num_services=0;
 my $num_networks=0;
-
 
 # read config file
 # services.conf
@@ -101,8 +100,9 @@ sub graph_services ($$) {
 	$COLORDRAW[4] = "EE44EE";
 	
 	my @AREA;
-	for ($i=0; $i<$num_services; $i++) {
-		$AREA[$i] = "AREA:c_$services[$i]#$COLORDRAW[$i]:$services[$i]";
+	$AREA[0] = "AREA:c_$services[0]#$COLORDRAW[0]:$services[0]";
+	for ($i=1; $i<$num_services; $i++) {
+		$AREA[$i] = "LINE2:c_$services[$i]#$COLORDRAW[$i]:$services[$i]";
 	}
 	
 	RRDs::graph("$GRAPH",
@@ -293,11 +293,11 @@ sub main()
 	my $img = $ENV{QUERY_STRING};
 	if(defined $img and $img =~ /\S/) {
 		if($img =~ /^(\d+)-s$/) {
-			my $file = "$base_dir\/imgs\/services_$1.png";
+			my $file = "$base_dir/imgs/services_$1.png";
 			graph_services($graphs[$1]{seconds}, $file);
 			send_image($file);
 		} elsif($img =~ /^(\d+)-n$/) {
-			my $file = "$base_dir\/imgs\/networks_$1.png";
+			my $file = "$base_dir/imgs/networks_$1.png";
 			graph_networks($graphs[$1]{seconds}, $file);
 			send_image($file);
 		}
