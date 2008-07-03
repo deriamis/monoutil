@@ -377,7 +377,6 @@ int find_port(int *l_port, int n_port, int port) {
 	int i=0;
 	for (i=0; i<n_port; i++) {
 		if (l_port[i] == port) return 1;
-		i++;
 	}
 	return 0;
 }
@@ -410,7 +409,6 @@ int find_ip(int *list_ip, int n_list, char *str) {
 	int i=0;
 	for (i=0; i<n_list; i++) {
 		if (a >= list_ip[i*2] && a <= list_ip[i*2+1]) return 1;
-		i++;
 	}
 	return 0;
 }
