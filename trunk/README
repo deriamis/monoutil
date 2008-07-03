@@ -41,9 +41,8 @@ Alias /monitorS /var/www/monitorS
 
 
 
-NOTE : Error with the kernel 2.6.23 (for example : Ubuntu 8.04), just remove the exit(-1)
-line (some dicussion about this bug on Ubuntuforums.org :
-http://ubuntuforums.org/showthread.php?t=192559&page=74)
+NOTE : Error with the kernel 2.6.23 (for example : Ubuntu 8.04), just remove the exit(-1) line
+(some dicussion about this bug on Ubuntuforums.org : http://ubuntuforums.org/showthread.php?t=192559&page=74)
 
 ##############
 Uninstallation

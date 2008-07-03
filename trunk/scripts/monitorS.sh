@@ -7,6 +7,7 @@ RETVAL=0
 LOCK="/var/lock/monitorS"
 PROGRAM="MonitorS"
 COMMAND="/usr/local/sbin/monitorS.pl"
+BIN="/usr/local/sbin"
 
 start() {
 	# Check if monitorS is already running
@@ -29,6 +30,11 @@ start() {
 	if [ $? -eq 0 ]; then
 		echo " ... Ok"
 		echo
+		echo "Start program..."
+		iptables -A INPUT -j NFQUEUE --queue-num 10 -s ! 127.0.0.1
+		iptables -A OUTPUT -j NFQUEUE --queue-num 10 -s ! 127.0.0.1
+		$BIN/packet_engine -B -q 10
+		/usr/local/sbin/monitorS.pl update_test 
 	else
 		echo " ... Failed"
 		echo

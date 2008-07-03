@@ -13,8 +13,8 @@ our $MONITORS_VER="1.0";					# version
 our $IDATE="01 Mars 2008";					# initial date
 our	$FILE_RRD="/usr/local/lib/monitorS.rrd";		# directory of files RRD
 our $FILE_LOG="/var/log/monitorS.log";		# log file of program
-our $FILE_CONFIG_SERVICES="services.conf"; 	# config file
-our $FILE_CONFIG_NETWORKS="networks.conf";
+our $FILE_CONFIG_SERVICES="/usr/local/etc/services.conf"; 	# config file
+our $FILE_CONFIG_NETWORKS="/usr/local/etc/networks.conf";
 my $TIME_SLEEP = 300;						# 5 minutes
 
 my @services;
@@ -102,14 +102,13 @@ sub init {
 	open(OCRON, "> $O_CRON");
 	print OCRON <<EOF;
 
-#!/bin/sh
-#
-PATH=/sbin:/bin:/usr/sbin:/usr/bin
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-* * * * * $crontabuser /usr/local/sbin/monitorS.pl update >/dev/null 2>&1
+0,5,10,15,20,25,30,35,40,45,50,55 * * * * $crontabuser /usr/local/sbin/monitorS.pl update >/dev/null 2>&1
 
 EOF
-	close(OCRON);
+#	close(OCRON);
 }
 
 # =========================================================

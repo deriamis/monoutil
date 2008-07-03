@@ -83,6 +83,7 @@ echo
 echo "Copying updater script to $SBIN directory"
 echo "monitorS.pl"
 cp monitorS.pl $SBIN
+cd ../packet_engine $SBIN
 echo
 
 echo "Copying init script to $INIT directory"
