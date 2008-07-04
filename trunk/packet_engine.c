@@ -39,6 +39,8 @@
 char *logfilename = "/var/log/monitorS.log";	// program's log file
 char *cfg_serv_filename = "/usr/local/etc/services.conf";		// program's config file for services
 char *cfg_network_filename = "/usr/local/etc/networks.conf";	// program's config file for networks
+double machine[255][255];
+int max_x=0, max_y=0;
 
 int num_serv = 0, num_networks = 0;
 struct io_services {
@@ -191,7 +193,7 @@ int main(int argc, char **argv) {
 				exit(0);
 		}
     }
-	
+
 	// begin with netfilter & write log file
 	// -------------------------------------
 	pthread_t tcap_packet, twrite_log;
@@ -375,6 +377,7 @@ static int nfqueue_cb(
 
 int find_port(int *l_port, int n_port, int port) {
 	int i=0;
+
 	for (i=0; i<n_port; i++) {
 		if (l_port[i] == port) return 1;
 	}
@@ -386,7 +389,7 @@ int find_port(int *l_port, int n_port, int port) {
  */
 void count_services(int s_port, int p_code, int in, int size) {
 	int i = 0;
-	
+
 	for (i = 0; i < num_serv; i++) {
 		if (find_port(services[i].port, services[i].n_port, s_port)) {
 			if (in)
@@ -398,14 +401,7 @@ void count_services(int s_port, int p_code, int in, int size) {
 	}
 }
 
-int find_ip(int *list_ip, int n_list, char *str) {
-	char *ptr1 = strchr(str, '.');
-	ptr1 = strchr(ptr1 + 1, '.');
-	int a = atoi(ptr1 + 1);
-	ptr1 = strrchr(str, '.');
-	int b = atoi(ptr1 + 1);	
-	a = (a << 8) + b;	
-	
+int find_ip(int *list_ip, int n_list, int a) {	
 	int i=0;
 	for (i=0; i<n_list; i++) {
 		if (a >= list_ip[i*2] && a <= list_ip[i*2+1]) return 1;
@@ -418,9 +414,21 @@ int find_ip(int *list_ip, int n_list, char *str) {
  */
 void count_networks(char *str, int in, int size) {
 	int i = 0;
-	
+	char *ptr1 = strchr(str, '.');
+	ptr1 = strchr(ptr1 + 1, '.');
+	int a = atoi(ptr1 + 1);
+	ptr1 = strrchr(str, '.');
+	int b = atoi(ptr1 + 1);	
+
+	machine[a][b] += size;
+	if (machine[max_x][max_y] < machine[a][b]) {
+		max_x = a;
+		max_y = b;
+	}
+
+	a = (a << 8) + b;	
 	for (i = 0; i < num_networks; i++) {
-		if (find_ip(networks[i].list_ip, networks[i].n_list, str)) {
+		if (find_ip(networks[i].list_ip, networks[i].n_list, a)) {
 			if (in)
 				networks[i].v_pkt_in += size;
 			else
@@ -649,6 +657,8 @@ void print_values(FILE *fd) {
 		fprintf(fd, "%s %.0lf %.0lf\n", 
 				networks[i].name, networks[i].v_pkt_in, networks[i].v_pkt_out);
 	}
+
+	fprintf(fd, "%d %d %.0lf\n", max_x, max_y, machine[max_x][max_y]);
 }
 
 /*

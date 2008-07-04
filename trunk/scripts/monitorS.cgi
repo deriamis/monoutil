@@ -228,13 +228,13 @@ HEADER
 		print "<h2 id=\"S$n\">$graphs[$n]{title}</h2>\n";
 		# for services
 		print "<MAP NAME=map_s$n>";
-#		print "<AREA HREF=\"test\" ALT=\"test_alt\" SHAPE=RECT COORDS=\"5,5,95,195\">";
-#		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"105,5,195,195\">";
-		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"68,33,517,185\">";
+#		print "<AREA HREF=\"machine.cgi\" ALT=\"test_alt\" SHAPE=RECT COORDS=\"5,5,95,195\">";
+#		print "<AREA HREF=\"machine.cgi\" ALT=\"test_alt\" COORDS=\"105,5,195,195\">";
+		print "<AREA HREF=\"machine.cgi\" ALT=\"test_alt\" COORDS=\"68,33,517,185\">";
 		print "</MAP>";
 		# for networks
 		print "<MAP NAME=map_n$n>";
-		print "<AREA HREF=\"test\" ALT=\"test_alt\" COORDS=\"68,33,517,185\">";
+		print "<AREA HREF=\"machine.cgi\" ALT=\"test_alt\" COORDS=\"68,33,517,185\">";
 		print "</MAP>";
 		print "<img border=0 src=\"$scriptname?${n}-s\" alt=\"monitorS\" usemap=\"#map_s$n\"/> ";
 		print "<img border=0 src=\"$scriptname?${n}-n\" alt=\"monitorS\" usemap=\"#map_n$n\"/><br/>";
