@@ -84,6 +84,11 @@ echo "monitorS.pl"
 rm $SBIN/monitorS.pl
 echo
 
+echo "Removing packet_engine in $SBIN directory"
+echo "packet_engine"
+rm $SBIN/packet_engine
+echo
+
 echo "Removing init script in $INIT directory"
 echo "monitorS.sh"
 rm $INIT/monitorS.sh
