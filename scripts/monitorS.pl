@@ -200,20 +200,22 @@ sub update {
 	open(FILE_LOG) or die("ERROR: Could not open log file.");
 	foreach $line (<FILE_LOG>) {
 		my @temp = split(' ', $line);
-		chomp(@temp);		
-		if ($n<$num_services) {
-			if (@temp) {
-				$services_data[$n*2] = $temp[1];
-				$services_data[$n*2+1] = $temp[2];
-				$n++;
-			}
-		} else {
-			if (@temp) {
-				$networks_data[($n-$num_services)*2] = $temp[1];
-				$networks_data[($n-$num_services)*2+1] = $temp[2];
-				$n++;
-			}
-		}  
+		chomp(@temp);	
+		if ($n<$num_services+$num_networks) {		
+			if ($n<$num_services) {
+				if (@temp) {
+					$services_data[$n*2] = $temp[1];
+					$services_data[$n*2+1] = $temp[2];
+					$n++;
+				}
+			} else {
+				if (@temp) {
+					$networks_data[($n-$num_services)*2] = $temp[1];
+					$networks_data[($n-$num_services)*2+1] = $temp[2];
+					$n++;
+				}
+			}  
+		}
 	}
 	close(FILE_LOG);
 
@@ -225,20 +227,22 @@ sub update {
 		open(FILE_LOG) or die("ERROR: Could not open log file.");
 		foreach $line (<FILE_LOG>) {
 			my @temp = split(' ', $line);
-			chomp(@temp);		
-			if ($n<$num_services) {
-				if (@temp) {
-					$services_data[$n*2] = $temp[1];
-					$services_data[$n*2+1] = $temp[2];
-					$n++;
-				}
-			} else {
-				if (@temp) {
-					$networks_data[$n*2] = $temp[1];
-					$networks_data[$n*2+1] = $temp[2];
-					$n++;
-				}
-			}  
+			chomp(@temp);
+			if ($n<$num_services+$num_networks) {			
+				if ($n<$num_services) {
+					if (@temp) {
+						$services_data[$n*2] = $temp[1];
+						$services_data[$n*2+1] = $temp[2];
+						$n++;
+					}
+				} else {
+					if (@temp) {
+						$networks_data[$n*2] = $temp[1];
+						$networks_data[$n*2+1] = $temp[2];
+						$n++;
+					}
+				}  
+			}
 		}
 		close(FILE_LOG);
 	} else { $TIME_SLEEP = 300; }
