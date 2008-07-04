@@ -99,8 +99,9 @@ echo
 echo "Copying cgi-bin files to $CGIBIN directory"
 echo "monitorS.cgi"
 ln -s $CGIBIN $HTDOCS/monitorS/cgi-bin
-cp monitorS.cgi $CGIBIN
-chmod 777 $CGIBIN/monitorS.cgi
+cp *.cgi $CGIBIN
+chmod 755 $CGIBIN/monitorS.cgi
+chmod 755 $CGIBIN/machine.cgi
 echo
 
 echo "---------------------------------------------------------------------"

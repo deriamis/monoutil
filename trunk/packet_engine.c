@@ -489,26 +489,32 @@ void read_log(char *filename) {
 	double test1 = 0, test2 = 0;
 	int i = 0;
 	while (! feof(fd)) {
-		fscanf(fd, "%s", temp);
-		fscanf(fd, "%lf", &test1);
-		fscanf(fd, "%lf", &test2);
-		
-		if (i < num_serv) {
-			//printf("out-if:%s %s\n", temp, services[i].name);
-			if (!strcmp(temp, services[i].name)) {
-				//printf("%s %.0f %.0f\n", temp, test1, test2);
-				services[i].v_pkt_in = test1;
-				services[i].v_pkt_out = test2;
-				i++;
+		if (i < num_serv + num_networks) {
+			fscanf(fd, "%s", temp);
+			fscanf(fd, "%lf", &test1);
+			fscanf(fd, "%lf", &test2);
+			
+			if (i < num_serv) {
+				//printf("out-if:%s %s\n", temp, services[i].name);
+				if (!strcmp(temp, services[i].name)) {
+					//printf("%s %.0f %.0f\n", temp, test1, test2);
+					services[i].v_pkt_in = test1;
+					services[i].v_pkt_out = test2;
+					i++;
+				}
+			} else {
+				if (!strcmp(temp, networks[i-num_serv].name)) {
+					//printf("%s %.0f %.0f\n", temp, test1, test2);
+					networks[i-num_serv].v_pkt_in = test1;
+					networks[i-num_serv].v_pkt_out = test2;
+					i++;
+				}
 			}
 		} else {
-			if (!strcmp(temp, networks[i-num_serv].name)) {
-				//printf("%s %.0f %.0f\n", temp, test1, test2);
-				networks[i-num_serv].v_pkt_in = test1;
-				networks[i-num_serv].v_pkt_out = test2;
-				i++;
-			}
-		}		
+			fscanf(fd, "%d", &max_x);
+			fscanf(fd, "%d", &max_y);
+			fscanf(fd, "%lf", &machine[max_x][max_y]);
+		}
 	}
 	if (i < num_serv + num_networks) {
 		printf("Warning: config file is changed before reading log file !\n");
