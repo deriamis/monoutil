@@ -33,8 +33,8 @@ start() {
 		echo "Start program..."
 		iptables -A INPUT -j NFQUEUE --queue-num 10 -s ! 127.0.0.1
 		iptables -A OUTPUT -j NFQUEUE --queue-num 10 -s ! 127.0.0.1
-		$BIN/packet_engine -B -q 10
-		/usr/local/sbin/monitorS.pl update_test 
+		$BIN/packet_engine -q 10 -B
+		#$COMMAND update_test 
 	else
 		echo " ... Failed"
 		echo
