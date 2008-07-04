@@ -80,10 +80,11 @@ chmod 755 $ETC/services.conf
 chmod 755 $ETC/networks.conf
 echo
 
-echo "Copying updater script to $SBIN directory"
+echo "Copying updater script, packet_egine to $SBIN directory"
 echo "monitorS.pl"
 cp monitorS.pl $SBIN
-cd ../packet_engine $SBIN
+echo "packet_engine"
+cp ../packet_engine $SBIN
 echo
 
 echo "Copying init script to $INIT directory"
