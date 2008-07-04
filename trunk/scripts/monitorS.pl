@@ -69,7 +69,7 @@ elsif($ARGV[0] eq "update") {
 } 
 elsif($ARGV[0] eq "update_test") {
 	my $n;
-	for($n=0; $n < 120; $n++) {	# 10hours
+	for($n=0; $n < 105120; $n++) {	# 24 * 365 hours
 		update();
 	}
 } 
