@@ -8,14 +8,16 @@ Requirement
 4. Perl support
 5. sudo apt-get install rrdtool
 6. sudo apt-get install librrds-perl
-7. lockfile (sudo apt-get install procmail)
 
 ############
 Installation
 ############
+In the directory of code sources, type
+
 $make
 $sudo make install
-$sudo ./scripts/install.sh
+$cd script
+$sudo ./install.sh
 ...
 
 #####################
@@ -48,3 +50,9 @@ NOTE : Error with the kernel 2.6.23 (for example : Ubuntu 8.04), just remove the
 Uninstallation
 ##############
 $sudo ./scripts/uninstall.sh
+
+##############
+Utilisation
+##############
+sudo /etc/init.d/monitorS.sh start
+sudo /usr/local/sbin/monitorS.pl update_test
