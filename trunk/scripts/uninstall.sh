@@ -99,8 +99,11 @@ rm -R $HTDOCS/monitorS
 echo
 
 echo "Removing cgi-bin files in $CGIBIN directory"
-echo "monitorS.cgi"
+ls $CGBIN/
 rm $CGIBIN/monitorS.cgi
+rm $CGIBIN/monitorS_in.cgi
+rm $CGIBIN/monitorS_out.cgi
+rm $CGIBIN/machine.cgi
 echo
 
 echo "Removing RRD files in $LIB directory"
