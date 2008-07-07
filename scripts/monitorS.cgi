@@ -49,7 +49,7 @@ foreach $line (<CONFIG>) {
 }
 close (CONFIG);
 
-sub graph_services ($$) {	
+sub graph_services ($$) {
 	my %BLACK = ("canvas" => "#000000",
 		"back" => "#101010",
 		"font" => "#C0C0C0",
@@ -81,7 +81,7 @@ sub graph_services ($$) {
 	$graph_colors[8] = "--color=SHADEB" . $BLACK{shadeb};
 
 	my ($time, $GRAPH) = @_;
-	$time = $time - 300;
+	$time = $time + 300; #604800;
 	my @DEF;
 	my $i;
 	for ($i=0; $i<$num_services; $i++) {
@@ -90,11 +90,11 @@ sub graph_services ($$) {
 	}
 	my @CDEF;
 	for ($i=0; $i<$num_services; $i++) {
-		$CDEF[$i] = "CDEF:c_$services[$i]=$services[$i]_in,$services[$i]_out,+";
+		$CDEF[$i] = "CDEF:c_$services[$i]=$services[$i]_in,$services[$i]_out,+,8,*";
 	}
 	my @COLORDRAW;
-	$COLORDRAW[0] = "44EE44";
-	$COLORDRAW[1] = "4444EE";
+	$COLORDRAW[0] = "4444EE";
+	$COLORDRAW[1] = "44EE44";
 	$COLORDRAW[2] = "EE4444";
 	$COLORDRAW[3] = "444444";
 	$COLORDRAW[4] = "EE44EE";
@@ -108,12 +108,12 @@ sub graph_services ($$) {
 	RRDs::graph("$GRAPH",
 		"--title=Services (in + out)",
 		"-s -".$time,
-		"-e -5min",
+		"-e -5min", #-1week",
 		"--imgformat=PNG",
-		"--vertical-label=bytes/secs",
+		"--vertical-label=bits/second",
 		"--width=450",
 		"--height=150",
-		"--upper-limit=200000",
+		"--upper-limit=500000",
 		"--lower-limit=0",
 		"--rigid",
 		@VERSION12,
@@ -158,7 +158,7 @@ sub graph_networks ($$) {
 	$graph_colors[8] = "--color=SHADEB" . $BLACK{shadeb};
 
 	my ($time, $GRAPH) = @_;
-	$time = $time - 300;
+	$time = $time + 300; #604800;
 	my @DEF;
 	my $i;
 	for ($i=0; $i<$num_networks; $i++) {
@@ -167,11 +167,11 @@ sub graph_networks ($$) {
 	}
 	my @CDEF;
 	for ($i=0; $i<$num_networks; $i++) {
-		$CDEF[$i] = "CDEF:c_$networks[$i]=$networks[$i]_in,$networks[$i]_out,+";
+		$CDEF[$i] = "CDEF:c_$networks[$i]=$networks[$i]_in,$networks[$i]_out,+,8,*";
 	}
 	my @COLORDRAW;
-	$COLORDRAW[0] = "44EE44";
-	$COLORDRAW[1] = "4444EE";
+	$COLORDRAW[0] = "4444EE";
+	$COLORDRAW[1] = "44EE44";
 	$COLORDRAW[2] = "EE4444";
 	$COLORDRAW[3] = "444444";
 	$COLORDRAW[4] = "EE44EE";
@@ -184,12 +184,12 @@ sub graph_networks ($$) {
 	RRDs::graph("$GRAPH",
 		"--title=Networks (in + out)",
 		"-s -".$time,
-		"-e -5min",
+		"-e -5min", #1week",
 		"--imgformat=PNG",
-		"--vertical-label=bytes/secs",
+		"--vertical-label=bits/second",
 		"--width=450",
 		"--height=150",
-		"--upper-limit=200000",
+		"--upper-limit=500000",
 		"--lower-limit=0",
 		"--rigid",
 		@VERSION12,
@@ -222,6 +222,10 @@ HEADER
 	for my $n (0..$#graphs) {
 		print "  <li><a href=\"#S$n\">$graphs[$n]{title}</a>&nbsp;</li>\n";
 	}
+	print "</ul>\n";
+	print "<ul id=\"in_out\">\n";
+		print "  <li><a href=\"monitorS_in.cgi\">In</a>&nbsp;</li>\n";
+		print "  <li><a href=\"monitorS_out.cgi\">Out</a>&nbsp;</li>\n";
 	print "</ul>\n";
 
 	for my $n (0..$#graphs) {

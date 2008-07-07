@@ -98,11 +98,13 @@ chmod 777 $HTDOCS/monitorS/imgs
 echo
 
 echo "Copying cgi-bin files to $CGIBIN directory"
-echo "monitorS.cgi"
+ls *.cgi
 ln -s $CGIBIN $HTDOCS/monitorS/cgi-bin
 cp *.cgi $CGIBIN
 chmod 755 $CGIBIN/monitorS.cgi
 chmod 755 $CGIBIN/machine.cgi
+chmod 755 $CGIBIN/monitorS_in.cgi
+chmod 755 $CGIBIN/monitorS_out.cgi
 echo
 
 echo "---------------------------------------------------------------------"
