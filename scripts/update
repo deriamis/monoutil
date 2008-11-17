@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+
+time=1214457562
+time=1212657393
+time=$(($time+75600))
+#time=1215134962
+#end=1215135862
+#end=1215247725
+end=1214644992
+
+s1_in=500000
+s2_in=1200
+s3_in=4500
+s1_out=490000
+s2_out=1200
+s3_out=4300
+
+count=0
+travail=120
+
+while [ $time -lt $end ]
+do
+	RANDOM=`dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" "`
+	RANDOM=$(($RANDOM%10000000))
+	echo $RANDOM
+	s1_in=$(($s1_in+$RANDOM))
+	s1_out=$(($s1_in/5))
+
+	RANDOM=`dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" "`
+	RANDOM=$(($RANDOM%20000))
+	echo $RANDOM
+	s2_in=$(($s2_in+$RANDOM))
+	s2_out=$s2_in
+
+	RANDOM=`dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" "`
+	RANDOM=$(($RANDOM%600000))
+	echo $RANDOM
+	s3_in=$(($s3_in+$RANDOM))
+	s3_out=$s3_in
+
+	r1_in=$s1_in
+	r2_in=$(($s2_in+$s3_in))
+	r1_out=$s1_out
+	r2_out=$(($s2_out+$s3_out))
+	str=$time:$s1_in:$s2_in:$s3_in:$s1_out:$s2_out:$s3_out:$r1_in:$r2_in:$r1_out:$r2_out
+	echo $str
+
+	rrdtool update monitorS.rrd $str
+
+	time=$(($time+300))
+	count=$(($count+1))
+
+	if [ $count -gt $travail ]; then
+		relax=$((288-$travail))
+		relax=$(($relax*300))
+		time=$(($time+$relax))
+		count=0
+		RANDOM=`dd if=/dev/urandom count=1 2> /dev/null | cksum | cut -f1 -d" "`
+		travail=$(($RANDOM%12))
+		travail=$(($travail*12))
+	fi
+done
