@@ -35,7 +35,7 @@
 #define OUT 0
 
 // global variables
-// ---------
+// -----------
 char *logfilename = "/var/log/monitorS.log";	// program's log file
 char *cfg_serv_filename = "/usr/local/etc/services.conf";		// program's config file for services
 char *cfg_network_filename = "/usr/local/etc/networks.conf";	// program's config file for networks
